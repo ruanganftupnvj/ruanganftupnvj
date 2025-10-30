@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <title>Jadwal Ketersediaan Ruangan FT UPNVJ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .room-available {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      transition: all 0.3s ease;
+    }
+    .room-available:hover {
+      transform: scale(1.03);
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.12);
+    }
+    .room-occupied {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      transition: all 0.3s ease;
+    }
+    .room-occupied:hover {
+      transform: scale(1.03);
+      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.12);
+    }
+    #logoutBtn {
+    display: inline-block;
+    }
+      /* Tambahan background adaptif */
+    #loginAwal {
+    background: url('bglogin.png') no-repeat center center fixed;
+    background-size: cover;
+   }
+
+   #mainContent {
+    background: url('GedungFT.jpg') no-repeat center center fixed;
+    background-size: cover;
+    min-height: 100vh;
+   }
+    @media (max-width: 640px) {
+    #userInfo {
+      position: static !important;
+      text-align: center !important;
+      margin-top: 0.5rem;
+    }
+    #logoutBtn {
+      display: inline-block;
+      margin-top: 0.25rem;
+    }
+  }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- ===========================
+       LOGIN AWAL (PILIH ROLE)
+       =========================== -->
+  <div id="loginAwal" class="fixed inset-0 bg-gray-100 flex items-center justify-center z-40">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-[420px]">
+      <h1 class="text-2xl font-bold text-center mb-4">Masuk</h1>
+
+      <input id="loginUsername" type="email" placeholder="Email" class="w-full border border-gray-300 rounded-lg p-3 mb-3" />
+      <input id="loginPassword" type="password" placeholder="Password" class="w-full border border-gray-300 rounded-lg p-3 mb-4" />
+
+      <div class="flex flex-col gap-2">
+        <button onclick="prosesLogin()" class="bg-blue-800 text-white py-2 rounded-lg hover:bg-blue-900">Login</button>
+        <button onclick="signupWithFirebase(document.getElementById('loginUsername').value, document.getElementById('loginPassword').value)" class="bg-green-700 text-white py-2 rounded-lg hover:bg-green-800">Daftar Akun</button>
+        <button onclick="forgotPassword(document.getElementById('loginUsername').value)" class="bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600">Lupa Password</button>
+      </div>
+
+      <p class="text-xs text-gray-500 mt-3 text-center">
+        Gunakan hanya email khusus akun UPNVJ
+        atau
+        gunakan user:user atau admin:admin untuk tes login
+      </p>
+    </div>
+  </div>
+
+
+  <!-- ===========================
+       KONTEN UTAMA (STRUKTUR LAMA)
+       =========================== -->
+  <div id="mainContent" class="hidden">
+    <!-- Header -->
+    <header class="bg-yellow-400 text-black py-4 shadow-md flex flex-col sm:flex-row items-center justify-center relative text-center sm:text-left px-4">
+      <img src="LOGO UPNVJ.png" alt="Logo UPNVJ" class="sm:absolute sm:left-6 w-14 h-14 sm:w-16 sm:h-16 mb-2 sm:mb-0" />
+      <h1 class="text-xl sm:text-2xl md:text-3xl font-bold px-4">Jadwal Ketersediaan Ruangan FT UPNVJ</h1>
+      <div id="userInfo" class="sm:absolute sm:right-6 top-4 text-sm text-gray-800 hidden text-right">
+        <div id="userInfoText"></div>
+        <button onclick="logout()" id="logoutBtn" class="mt-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs transition">Logout</button>
+      </div>
+
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-gray-800 text-white py-3 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-12 text-center px-4">
+      <button id="navJadwal" onclick="showTab('jadwal')" class="hover:underline px-3 py-1">Menu Utama</button>
+      <button id="navBooking" onclick="showTab('booking')" class="hover:underline px-3 py-1">Booking Ruangan</button>
+      <button id="navAdmin" onclick="showTab('admin')" class="hover:underline px-3 py-1 hidden">Pengajuan Permohonan</button>
+      <button id="navEditStatus" onclick="showTab('editStatus')" class="hover:underline px-3 py-1 hidden">Edit Status Ruangan</button>
+    </nav>
+
+    <!-- Menu Utama -->
+    <div id="jadwal" class="p-4 sm:p-6">
+      <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-6">
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-bold inline-block pb-1">
+            Menu Utama
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label for="tanggal" class="block text-gray-700 mb-2 font-medium">Pilih Tanggal:</label>
+            <input type="date" id="tanggal" class="w-full border border-gray-300 rounded-lg p-2" />
+          </div>
+          <div>
+            <label for="jam" class="block text-gray-700 mb-2 font-medium">Pilih Waktu:</label>
+            <select id="jam" class="w-full border border-gray-300 rounded-lg p-2"></select>
+          </div>
+        </div>
+
+        <div class="flex justify-center mb-6">
+          <button onclick="renderRuangan()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+            Lihat Ruangan
+          </button>
+        </div>
+
+        <div id="RuanganContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+      </div>
+    </div>
+
+    <!-- Booking Ruangan (Hanya untuk User) -->
+    <div id="booking" class="hidden p-4 sm:p-6">
+      <div class="max-w-lg mx-auto bg-white rounded-xl shadow-lg p-6">
+        <h2 class="text-2xl font-bold text-center mb-4">Permohonan Booking Ruangan</h2>
+        <form id="bookingForm" class="space-y-4" onsubmit="event.preventDefault(); submitBooking();">
+          <div>
+            <input id="nama" name="nama" type="text" placeholder="Nama Lengkap" class="w-full border border-gray-300 rounded-lg p-3" />
+            <p id="errorNama" class="text-red-500 text-sm mt-1 hidden">Nama hanya boleh berisi huruf dan spasi.</p>
+          </div>
+          <div>
+            <input id="nim" name="nim" type="text" placeholder="NIM / NIDN" class="w-full border border-gray-300 rounded-lg p-3" />
+            <p id="errorNim" class="text-red-500 text-sm mt-1 hidden">NIM hanya boleh berisi angka.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input id="tanggalBooking" name="tanggalBooking" type="date" class="w-full border border-gray-300 rounded-lg p-3" />
+            <select id="bookingWaktu" name="bookingWaktu" class="w-full border border-gray-300 rounded-lg p-3"></select>
+          </div>
+
+          <select id="ruang" name="ruang" class="w-full border border-gray-300 rounded-lg p-3">
+            <option value="">Pilih Ruang</option>
+          </select>
+
+          <textarea id="keteranganBooking" name="keteranganBooking" placeholder="Keterangan (contoh: Ruangan pengganti, rapat, dsb)" class="w-full border border-gray-300 rounded-lg p-3" rows="3"></textarea>
+
+          <button type="submit" class="w-full bg-blue-600 text-white rounded-lg py-3 font-semibold hover:bg-blue-700 transition">Ajukan Permohonan</button>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="admin" class="hidden p-4 sm:p-6">
+      <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-6">
+        <h2 class="text-2xl font-bold text-center mb-4">Pengajuan Permohonan</h2>
+
+        <div class="mb-4 flex gap-3">
+          <button onclick="renderAdminRequests()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Daftar Permohonan</button>
+          <button onclick="renderScheduleList()" class="bg-green-600 text-white px-4 py-2 rounded-lg">List Jadwal</button>
+        </div>
+
+        <div id="adminContent"></div>
+      </div>
+    </div>
+
+    <!-- Edit Status Ruangan (Hanya untuk Admin) -->
+    <div id="editStatus" class="hidden p-4 sm:p-6">
+      <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6">
+        <h2 class="text-2xl font-bold text-center mb-4">Edit Status Ruangan</h2>
+
+        <form id="editStatusForm" onsubmit="event.preventDefault(); ubahStatusRuangan();" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-gray-700 mb-2 font-medium">Tanggal</label>
+              <input id="editTanggal" type="date" class="w-full border border-gray-300 rounded-lg p-2" required>
+            </div>
+            <div>
+              <label class="block text-gray-700 mb-2 font-medium">Jam Ruangan</label>
+              <select id="editJam" class="w-full border border-gray-300 rounded-lg p-2" required></select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-gray-700 mb-2 font-medium">Nomor Ruangan</label>
+              <select id="editRuang" class="w-full border border-gray-300 rounded-lg p-2" required></select>
+            </div>
+            <div>
+              <label class="block text-gray-700 mb-2 font-medium">Opsi Status</label>
+              <select id="editOpsi" class="w-full border border-gray-300 rounded-lg p-2" required>
+                <option value="kosong">Kosongkan</option>
+                <option value="terpakai">Terpakai</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 mb-2 font-medium">Nama Lengkap</label>
+            <input id="editNama" type="text" placeholder="Nama Lengkap" class="w-full border border-gray-300 rounded-lg p-2">
+          </div>
+
+          <div>
+            <label class="block text-gray-700 mb-2 font-medium">NIM / NIDN</label>
+            <input id="editNim" type="text" placeholder="NIM / NIDN" class="w-full border border-gray-300 rounded-lg p-2">
+          </div>
+
+          <div>
+            <label class="block text-gray-700 mb-2 font-medium">Keterangan</label>
+            <textarea id="editKet" placeholder="Keterangan tambahan" class="w-full border border-gray-300 rounded-lg p-2" rows="3"></textarea>
+          </div>
+
+          <div class="flex justify-center">
+            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">Ubah Status</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ============================= -->
+  <!-- FIREBASE CONFIG & AUTH SYSTEM -->
+  <!-- ============================= -->
+  <script type="module">
+    // Import SDK Firebase dari CDN (tidak pakai npm)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { 
+      getAuth, 
+      createUserWithEmailAndPassword, 
+      signInWithEmailAndPassword, 
+      sendPasswordResetEmail, 
+      sendEmailVerification, 
+      signOut 
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+    // Config kamu dari Firebase Console
+    const firebaseConfig = {
+      apiKey: "",
+      authDomain: "",
+      projectId: "",
+      storageBucket: "",
+      messagingSenderId: "",
+      appId: ""
+    };
+
+    // Inisialisasi Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.signOut = signOut;
+
+    // Simpan agar bisa dipakai di script lain
+    window.auth = auth;
+
+    // ==============================
+    // Fungsi untuk signup, login, reset password
+    // ==============================
+
+    // Signup (register akun baru @upnvj.ac.id)
+    window.signupWithFirebase = async function(email, password) {
+      if (!email.endsWith("upnvj.ac.id")) {
+        alert("Daftar terlebih dahulu dan gunakan email kampus UPNVJ");
+        return;
+      }
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await sendEmailVerification(userCredential.user);
+        alert("Akun berhasil dibuat! Silakan cek email untuk verifikasi.");
+      } catch (error) {
+        alert("Signup gagal");
+      }
+    }
+
+    // Login
+    window.loginWithFirebase = async function(email, password) {
+      // Cek apakah email termasuk akun lokal
+      if (localAccounts[email]) {
+        if (password === localAccounts[email].password) {
+          // Simpan login di localStorage
+          localStorage.setItem("currentUser", JSON.stringify({ 
+            email, 
+            role: localAccounts[email].role 
+          }));
+          alert(`Login berhasil sebagai ${localAccounts[email].role.toUpperCase()}`);
+          window.location.reload();
+          return;
+        } else {
+          alert("Password salah.");
+          return;
+        }
+      }
+
+      // Jika bukan akun lokal, lanjut ke Firebase
+      if (!email.endsWith("upnvj.ac.id")) {
+        alert("Gunakan email kampus UPNVJ.");
+        return;
+      }
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        if (!user.emailVerified) {
+          alert("Harap verifikasi email terlebih dahulu sebelum login.");
+          await signOut(auth);
+          return;
+        }
+
+        localStorage.setItem("currentUser", JSON.stringify({ 
+          email: user.email, 
+          uid: user.uid, 
+          role: "user" 
+        }));
+        alert("Login berhasil!");
+        window.location.reload();
+      } catch (error) {
+        alert("Login gagal");
+      }
+    };
+
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Ambil email dan tampilkan di header
+        const email = user.email;
+        const displayName = email.split('@')[0]; // ambil bagian sebelum @
+        const role = email.includes('admin') ? 'admin' : 'user'; // deteksi admin manual
+
+        document.getElementById('userInfo').classList.remove('hidden');
+        document.getElementById('userInfoText').innerText = `Masuk sebagai: ${displayName} (${role})`;
+
+        // Simpan variabel global
+        currentUser = displayName;
+        currentRole = role;
+      } else {
+        // Belum login, tampilkan halaman login
+        document.getElementById('loginAwal').classList.remove('hidden');
+        document.getElementById('mainContent').classList.add('hidden');
+      }
+    });
+
+    // Lupa Password
+    window.forgotPassword = async function(email) {
+      if (!email) return alert("Masukkan email terlebih dahulu.");
+      try {
+        await sendPasswordResetEmail(auth, email);
+        alert("Email reset password sudah dikirim ke: " + email);
+      } catch (error) {
+        alert("Gagal mengirim reset password");
+      }
+    }
+
+    // Logout
+    window.logoutFirebase = async function() {
+      await signOut(auth);
+      localStorage.removeItem("currentUser");
+      alert("Anda telah logout.");
+      window.location.reload();
+    }
+  </script>
+
+  <!-- ===========================
+       SCRIPT: LOGIKA APLIKASI
+       =========================== -->
+  <script>
+    const RuanganList = ["301","302","303","304","305","306","401","402","403","404","405","406","ATA"];
+    const waktuList = [
+      "07.10-08.50", "07.10-09.40",  "08.50-10.30", "09.40-11.20",
+      "10.30-12.10", "13.00-14.40", "13.00-15.30", "14.40-16.20", "15.30-17.10", "16.20-18.10"
+    ];
+
+    let bookingList = [];
+    let RuanganStatus = {};
+
+    // Ambil data awal dari backend
+    async function loadDataFromServer() {
+      // Ambil daftar booking
+      const resBookings = await fetch('/backend/bookings.php');
+      bookingList = await resBookings.json();
+
+      // Ambil semua status ruangan dari database
+      const resStatus = await fetch('/backend/room_status.php');
+      const statusData = await resStatus.json();
+
+      // Konversi ke format RuanganStatus[tanggal][waktu][ruang]
+      RuanganStatus = {};
+      statusData.forEach(row => {
+        if (!RuanganStatus[row.tanggal]) RuanganStatus[row.tanggal] = {};
+        if (!RuanganStatus[row.tanggal][row.waktu]) RuanganStatus[row.tanggal][row.waktu] = {};
+        RuanganStatus[row.tanggal][row.waktu][row.ruang] = {
+          status: row.status,
+          by: row.by_nama,
+          nim: row.nim,
+          ket: row.ket
+        };
+      });
+
+      console.log("Data dari server:", bookingList, RuanganStatus);
+    }
+
+
+    loadDataFromServer();
+    let currentRole = null;
+    let currentUser = null;
+
+    // Helper: simpan data
+    async function submitBookingToServer(bookingData) {
+      const res = await fetch('/backend/bookings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData)
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        await loadDataFromServer(); // perbarui bookingList dari server
+      } else {
+        alert("Terjadi kesalahan: " + result.error);
+      }
+    }
+
+
+    // Inisialisasi tampilan (waktu, pilihan ruang)
+    function initSelectors() {
+      const jam = document.getElementById('jam');
+      const bookingWaktu = document.getElementById('bookingWaktu');
+      if (jam) jam.innerHTML = waktuList.map(w => `<option value="${w}">${w}</option>`).join('');
+      if (bookingWaktu) bookingWaktu.innerHTML = waktuList.map(w => `<option value="${w}">${w}</option>`).join('');
+      const ruangSel = document.getElementById('ruang');
+      if (ruangSel) {
+        ruangSel.innerHTML = `<option value="">Pilih Ruang</option>` + RuanganList.map(r => `<option value="${r}">${r}</option>`).join('');
+      }
+    }
+
+    // LOGIN
+    async function prosesLogin() {
+      const userInput = document.getElementById('loginUsername').value.trim();
+      const pass = document.getElementById('loginPassword').value.trim();
+
+      if (!userInput || !pass) {
+        alert('Isi username dan password!');
+        return;
+      }
+
+      // ===== Manual test accounts =====
+      // Gunakan format email agar konsisten dengan Firebase checks
+      const manualAccounts = {
+        "admin": { password: "admin", role: "admin" },
+        "user":  { password: "user",  role: "user"  }
+      };
+
+      // ===== Cek akun manual terlebih dahulu =====
+      if (manualAccounts[userInput]) {
+        if (manualAccounts[userInput].password === pass) {
+          currentUser = userInput;
+          currentRole = manualAccounts[userInput].role;
+          localStorage.setItem("currentUser", JSON.stringify({ user: currentUser, role: currentRole }));
+
+          alert(`Login berhasil sebagai ${currentRole.toUpperCase()}!`);
+
+          // Perlihatkan UI
+          document.getElementById('loginAwal').classList.add('hidden');
+          document.getElementById('mainContent').classList.remove('hidden');
+          document.getElementById('userInfo').classList.remove('hidden');
+          document.getElementById('userInfoText').innerText = `Masuk sebagai: ${currentUser} (${currentRole})`;
+
+          // Tampilkan / sembunyikan nav sesuai role
+          if (currentRole === 'admin') {
+            document.getElementById('navAdmin').classList.remove('hidden');
+            document.getElementById('navEditStatus').classList.remove('hidden');
+            document.getElementById('navBooking').classList.add('hidden');
+            showTab('admin');
+          } else {
+            document.getElementById('navAdmin').classList.add('hidden');
+            document.getElementById('navEditStatus').classList.add('hidden');
+            document.getElementById('navBooking').classList.remove('hidden');
+            showTab('jadwal');
+          }
+
+          initSelectors();
+          renderRuangan();
+
+          // PENTING: hentikan eksekusi lebih lanjut (tidak lanjut ke Firebase)
+          return;
+        } else {
+          alert("Password salah untuk akun manual!");
+          return;
+        }
+      }
+
+      // ===== Jika bukan akun manual, lanjutkan ke Firebase (modular SDK) =====
+      // Pastikan menggunakan signInWithEmailAndPassword(auth, email, pass)
+      try {
+        // validasi domain email kampus (opsional)
+        const domain = userInput.split('@')[1] || '';
+        if (!domain.endsWith('upnvj.ac.id')) {
+          alert('Gunakan email UPNVJ untuk login.');
+          return;
+        }
+
+        // modular Firebase call
+        const userCredential = await signInWithEmailAndPassword(auth, userInput, pass);
+        const user = userCredential.user;
+
+        // jika perlu cek verifikasi email:
+        if (!user.emailVerified) {
+          alert('Harap verifikasi email terlebih dahulu.');
+          await signOut(auth);
+          return;
+        }
+
+        currentUser = user.email;
+        currentRole = 'user';
+        localStorage.setItem("currentUser", JSON.stringify({ user: currentUser, role: currentRole }));
+
+        alert("Login berhasil!");
+
+        document.getElementById('loginAwal').classList.add('hidden');
+        document.getElementById('mainContent').classList.remove('hidden');
+        document.getElementById('userInfo').classList.remove('hidden');
+        document.getElementById('userInfoText').innerText = `Masuk sebagai: ${currentUser}`;
+
+        document.getElementById('navAdmin').classList.add('hidden');
+        document.getElementById('navEditStatus').classList.add('hidden');
+        document.getElementById('navBooking').classList.remove('hidden');
+        showTab('jadwal');
+
+        initSelectors();
+        renderRuangan();
+      } catch (err) {
+        console.error('Firebase login error:', err);
+        alert('Login gagal: ' + 'Terjadi kesalahan');
+      }
+    }
+
+    // RENDER Ruangan (Menu Utama)
+    function renderRuangan() {
+      const tanggal = document.getElementById('tanggal').value || 'default';
+      const waktu = document.getElementById('jam').value || 'default';
+      const container = document.getElementById('RuanganContainer');
+      container.innerHTML = '';
+
+      // prepare object shapes
+      if (!RuanganStatus[tanggal]) RuanganStatus[tanggal] = {};
+      if (!RuanganStatus[tanggal][waktu]) RuanganStatus[tanggal][waktu] = {};
+
+      RuanganList.forEach(Ruangan => {
+        const data = RuanganStatus[tanggal][waktu][Ruangan] || { status: 'kosong' };
+        const div = document.createElement('div');
+        div.className = `${data.status === 'kosong' ? 'room-available' : 'room-occupied'} p-4 rounded-xl text-center cursor-pointer`;
+        let inner = `<div class="text-lg sm:text-2xl font-bold mb-1">${Ruangan}</div>`;
+        inner += `<div class="text-xs sm:text-sm">${data.status === 'kosong' ? 'Tersedia' : 'Terpakai'}</div>`;
+        if (data.status === 'terpakai' && currentRole === 'admin') {
+          inner += `<div class="text-[10px] mt-2 italic">Oleh: ${data.by || '-'} ${data.nim ? `(${data.nim})` : ''}</div>`;
+        }
+        div.innerHTML = inner;
+        container.appendChild(div);
+      });
+
+      // save RuanganStatus in case we created empty objects
+      saveAll();
+    }
+
+    // USER: submit booking
+    function submitBooking() {
+      // validation
+      const nama = document.getElementById('nama').value.trim();
+      const nim = document.getElementById('nim').value.trim();
+      const tanggalBooking = document.getElementById('tanggalBooking').value;
+      const waktuBooking = document.getElementById('bookingWaktu').value;
+      const ruang = document.getElementById('ruang').value;
+      const ket = document.getElementById('keteranganBooking').value.trim();
+
+      const errNama = document.getElementById('errorNama');
+      const errNim = document.getElementById('errorNim');
+      let ok = true;
+      if (!/^[A-Za-z\s]+$/.test(nama) || !nama) { errNama.classList.remove('hidden'); ok = false; } else errNama.classList.add('hidden');
+      if (!/^[0-9]+$/.test(nim) || !nim) { errNim.classList.remove('hidden'); ok = false; } else errNim.classList.add('hidden');
+      if (!tanggalBooking || !waktuBooking || !ruang) { alert('Lengkapi tanggal, jam, dan ruang'); ok = false; }
+
+      if (!ok) return;
+
+      // create booking object
+      const newBooking = {
+        nama, nim, tanggal: tanggalBooking, waktu: waktuBooking, ruang, ket,
+        status: 'Menunggu',
+        user: currentUser || nama
+      };
+      submitBookingToServer(newBooking);
+
+
+      // feedback
+      alert('Permohonan booking terkirim. Menunggu persetujuan admin.');
+      // clear form
+      document.getElementById('bookingForm').reset();
+      renderRuangan();
+      // if admin viewing, refresh their list
+      if (currentRole === 'admin') renderAdminRequests();
+    }
+
+    // ADMIN: render permohonan list
+    function renderAdminRequests() {
+      const box = document.getElementById('adminContent');
+      box.innerHTML = '';
+      if (bookingList.length === 0) {
+        box.innerHTML = '<p class="text-gray-600">Belum ada permohonan booking.</p>';
+        return;
+      }
+
+      // tampilkan dari yang terbaru
+      const list = bookingList.slice().reverse();
+      list.forEach(req => {
+        const div = document.createElement('div');
+        div.className = 'border rounded-lg p-4 mb-3 bg-white shadow-sm';
+
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="font-semibold text-lg">${req.nama} <span class="text-sm text-gray-500">(${req.nim})</span></div>
+              <div class="text-sm text-gray-600">Ruang: <b>${req.ruang}</b> — ${req.tanggal} | ${req.waktu}</div>
+              <div class="text-sm text-gray-600">Keterangan: ${req.ket || '-'}</div>
+              <div class="text-sm mt-2">Status:
+                <span class="font-semibold ${req.status === 'Disetujui' ? 'text-green-600' : req.status === 'Ditolak' ? 'text-red-600' : 'text-yellow-600'}">
+                  ${req.status}
+                </span>
+              </div>
+            </div>
+
+            <div class="text-right">
+              ${req.status === 'Menunggu' ? `
+                <button onclick="adminAccept(${req.id})" class="bg-green-500 text-white px-3 py-1 rounded-lg mb-2 block">ACC</button>
+                <button onclick="adminShowRejectBox(${req.id})" class="bg-red-500 text-white px-3 py-1 rounded-lg block">Tolak</button>
+              ` : ''}
+              <button onclick="hapusPermohonan(${req.id})"
+                class="bg-gray-600 text-white px-3 py-1 rounded-lg mt-2 block hover:bg-gray-700">
+                Hapus Permohonan
+              </button>
+            </div>
+          </div>
+
+          <div id="rejectBox-${req.id}" class="mt-3 hidden">
+            <textarea id="rejectReason-${req.id}" placeholder="Alasan penolakan (opsional)"
+              class="w-full border rounded-lg p-2 mb-2"></textarea>
+            <div class="flex justify-end gap-2">
+              <button onclick="adminReject(${req.id})" class="bg-red-600 text-white px-3 py-1 rounded-lg">Kirim Tolak</button>
+              <button onclick="adminHideRejectBox(${req.id})" class="bg-gray-200 px-3 py-1 rounded-lg">Batal</button>
+            </div>
+          </div>
+        `;
+        box.appendChild(div);
+      });
+    }
+
+
+    function adminShowRejectBox(id) {
+      const el = document.getElementById(`rejectBox-${id}`);
+      if (el) el.classList.remove('hidden');
+    }
+    function adminHideRejectBox(id) {
+      const el = document.getElementById(`rejectBox-${id}`);
+      if (el) el.classList.add('hidden');
+    }
+
+    // admin accepts booking: set RuanganStatus[tanggal][waktu][ruang] = terpakai with by & nim
+    async function adminAccept(id) {
+      const idx = bookingList.findIndex(b => parseInt(b.id) === parseInt(id));
+      if (idx === -1) { 
+        alert('Data tidak ditemukan'); 
+        return; 
+      }
+
+      const req = bookingList[idx];
+      if (!confirm(`Yakin ingin menyetujui permohonan ini?`)) return;
+
+      // Simpan status ruangan ke database
+      const resRoom = await fetch('/backend/room_status.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tanggal: req.tanggal,
+          waktu: req.waktu,
+          ruang: req.ruang,
+          status: 'terpakai',
+          by_nama: req.nama,
+          nim: req.nim,
+          ket: req.ket
+        })
+      });
+
+      const resRoomData = await resRoom.json();
+      if (!resRoomData.success) {
+        alert("Gagal menyimpan status ruangan: " + (resRoomData.error || "Terjadi kesalahan tak dikenal"));
+        return;
+      }
+
+      // Update status booking di database
+      const response = await fetch('/backend/bookings.php', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: req.id, status: 'Disetujui' })
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        alert("Gagal memperbarui status booking: " + (result.error || "unknown error"));
+        return;
+      }
+
+      // Refresh data dari server & render ulang
+      await loadDataFromServer();
+      renderAdminRequests();
+      renderRuangan();
+
+      alert(`Permohonan ruang ${req.ruang} pada ${req.tanggal} ${req.waktu} berhasil disetujui.`);
+    }
+
+
+    // Jalankan saat halaman baru dibuka / direfresh
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedUser = localStorage.getItem("currentUser");
+      const savedTab = localStorage.getItem("activeTab") || 'jadwal'; // gunakan activeTab, bukan lastTab
+
+      if (savedUser) {
+        const { user, role } = JSON.parse(savedUser);
+        currentUser = user;
+        currentRole = role;
+
+        document.getElementById('loginAwal').classList.add('hidden');
+        document.getElementById('mainContent').classList.remove('hidden');
+        document.getElementById('userInfo').classList.remove('hidden');
+        document.getElementById('userInfoText').innerText = `Masuk sebagai: ${currentUser} (${currentRole})`;
+
+        // tampilkan navigasi sesuai role
+        if (role === 'admin') {
+          document.getElementById('navAdmin').classList.remove('hidden');
+          document.getElementById('navEditStatus').classList.remove('hidden');
+          document.getElementById('navBooking').classList.add('hidden');
+        } else {
+          document.getElementById('navAdmin').classList.add('hidden');
+          document.getElementById('navEditStatus').classList.add('hidden');
+          document.getElementById('navBooking').classList.remove('hidden');
+        }
+
+        initSelectors();
+        renderRuangan();
+
+        // tampilkan tab terakhir
+        showTab(savedTab);
+      }
+    });
+
+    // admin rejects booking: set booking.status, add notification with reason
+    async function adminReject(id) {
+      const idx = bookingList.findIndex(b => parseInt(b.id) === parseInt(id));
+      if (idx === -1) { 
+        alert('Data tidak ditemukan'); 
+        return; 
+      }
+
+      const req = bookingList[idx];
+      const reasonInput = document.getElementById(`rejectReason-${id}`);
+      const reason = reasonInput ? reasonInput.value.trim() : '';
+
+      if (!confirm(`Yakin ingin menolak permohonan ini?`)) return;
+
+      // Kirim update status ke database
+      const response = await fetch('/backend/bookings.php', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: req.id, status: 'Ditolak' })
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        alert("Gagal memperbarui status di server: " + (result.error || "unknown error"));
+        return;
+      }
+
+      // Refresh data dari server & render ulang
+      await loadDataFromServer();
+      renderAdminRequests();
+      renderRuangan();
+
+      alert(`Permohonan ruang ${req.ruang} pada ${req.tanggal} ${req.waktu} telah ditolak.${reason ? ' Alasan: ' + reason : ''}`);
+    }
+
+    
+
+    async function hapusPermohonan(id) {
+      if (!confirm("Yakin ingin menghapus permohonan ini?")) return;
+
+      try {
+        const res = await fetch('/backend/bookings.php', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          alert("Permohonan berhasil dihapus.");
+          await loadDataFromServer();
+          renderAdminRequests();
+        } else {
+          alert("Gagal menghapus permohonan: " + (result.error || "Terjadi kesalahan"));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // ADMIN: List jadwal (lihat seluruh RuanganStatus)
+    function renderScheduleList() {
+      const box = document.getElementById('adminContent');
+      box.innerHTML = '<h3 class="font-semibold mb-3">List Jadwal Ruangan Terpakai</h3>';
+
+      const keys = Object.keys(RuanganStatus);
+      if (keys.length === 0) {
+        box.innerHTML += '<p class="text-gray-600">Belum ada jadwal terpakai.</p>';
+        return;
+      }
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'space-y-3';
+
+      keys.forEach(tanggal => {
+        const times = RuanganStatus[tanggal];
+        Object.keys(times).forEach(waktu => {
+          const rooms = times[waktu];
+          const usedRooms = Object.keys(rooms).filter(r => rooms[r].status === 'terpakai');
+          if (usedRooms.length === 0) return;
+
+          const card = document.createElement('div');
+          card.className = 'p-3 border rounded-lg bg-gray-50';
+          let html = `<div class="font-semibold mb-2">${tanggal} — ${waktu}</div>`;
+          html += usedRooms.map(r => {
+            const info = rooms[r];
+            return `
+              <div class="text-sm mb-2 border-b pb-2">
+                <b>Ruang ${r}</b> — oleh ${info.by || '-'} (${info.nim || '-'})
+                ${info.ket ? `<div class="text-xs text-gray-600 ml-4">Keterangan: ${info.ket}</div>` : ''}
+                <button onclick="hapusJadwal('${tanggal}', '${waktu}', '${r}')" 
+                  class="mt-2 bg-red-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-red-700 transition">
+                  Hapus Jadwal
+                </button>
+              </div>
+            `;
+          }).join('');
+          card.innerHTML = html;
+          wrapper.appendChild(card);
+        });
+      });
+
+      box.appendChild(wrapper);
+    }
+
+    async function hapusJadwal(tanggal, waktu, ruang) {
+      if (!confirm(`Yakin ingin menghapus jadwal ruang ${ruang} pada ${tanggal} ${waktu}?`)) return;
+
+      try {
+        const res = await fetch('/backend/room_status.php', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tanggal, waktu, ruang })
+        });
+
+        const result = await res.json();
+        if (!result.success) {
+          alert("Gagal menghapus jadwal: " + (result.error || "Terjadi kesalahan."));
+          return;
+        }
+
+        alert(`Jadwal ruang ${ruang} pada ${tanggal} ${waktu} berhasil dihapus.`);
+        await loadDataFromServer();
+        renderScheduleList(); // tampilkan ulang
+        renderRuangan();      // sinkron dengan menu utama
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // RESET JADWAL (ADMIN)
+    function resetJadwal() {
+      if (!confirm('Yakin ingin mereset semua jadwal (status terpakai akan dikosongkan)?')) return;
+      RuanganStatus = {};
+      // Do NOT clear bookingList by request — we only reset jadwal
+      saveAll();
+      renderScheduleList();
+      renderRuangan();
+      alert('Semua jadwal (status ruangan) telah direset.');
+    }
+
+
+    // NAVIGATION
+    function showTab(tabId) {
+      // daftar lengkap id tab yang ada di page — tambahkan bila ada tab baru
+      const allTabs = ['jadwal', 'booking', 'admin', 'editStatus'];
+
+      allTabs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+
+      const target = document.getElementById(tabId);
+      if (target) {
+        target.classList.remove('hidden');
+      } else {
+        // debugging helpful message
+        console.warn("showTab(): tidak menemukan element dengan id:", tabId);
+      }
+
+      localStorage.setItem('activeTab', tabId);
+
+      refreshCurrentTab(tabId);
+    }
+
+
+    // Saat halaman dimuat ulang, tampilkan tab terakhir yang disimpan
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedUser = localStorage.getItem("currentUser");
+      const savedTab = localStorage.getItem('activeTab') || 'jadwal';
+
+      if (savedUser) {
+        const { user, role } = JSON.parse(savedUser);
+        currentUser = user;
+        currentRole = role;
+
+        document.getElementById('loginAwal').classList.add('hidden');
+        document.getElementById('mainContent').classList.remove('hidden');
+        document.getElementById('userInfo').classList.remove('hidden');
+        document.getElementById('userInfoText').innerText = `Masuk sebagai: ${currentUser} (${currentRole})`;
+
+        // Sembunyikan/Perlihatkan navigasi sesuai role
+        if (role === 'admin') {
+          document.getElementById('navAdmin').classList.remove('hidden');
+          document.getElementById('navEditStatus').classList.remove('hidden');
+          document.getElementById('navBooking').classList.add('hidden');
+        } else {
+          document.getElementById('navAdmin').classList.add('hidden');
+          document.getElementById('navEditStatus').classList.add('hidden');
+          document.getElementById('navBooking').classList.remove('hidden');
+        }
+
+        initSelectors();
+        renderRuangan();
+
+        // Kembali ke tab terakhir
+        showTab(savedTab);
+      }
+    });
+
+    // Fungsi untuk memuat ulang data sesuai tab
+    async function refreshCurrentTab(tabId) {
+      await loadDataFromServer();
+
+      if (tabId === 'jadwal') {
+        renderRuangan();
+      } else if (tabId === 'admin') {
+        renderAdminRequests();
+      } else if (tabId === 'editStatus') {
+        renderRuangan();
+      }
+    }
+
+    // Logout
+    function logout() {
+      // Hapus data login dari localStorage
+      localStorage.removeItem("currentUser");
+      localStorage.removeItem("activeTab");
+
+      // Reset variabel login
+      currentRole = null;
+      currentUser = null;
+
+      // Sembunyikan semua elemen yang berkaitan dengan user/admin
+      document.getElementById('navAdmin').classList.add('hidden');
+      document.getElementById('navEditStatus').classList.add('hidden');
+      document.getElementById('navBooking').classList.add('hidden');
+
+      // Sembunyikan halaman utama dan tampilkan halaman login
+      document.getElementById('mainContent').classList.add('hidden');
+      document.getElementById('loginAwal').classList.remove('hidden');
+
+      // Reset tampilan info user
+      const infoDiv = document.getElementById('userInfo');
+      if (infoDiv) {
+        infoDiv.classList.add('hidden');
+        const userText = document.getElementById('userInfoText');
+        if (userText) userText.textContent = '';
+      }
+
+      // Kembalikan ke tab jadwal (default)
+      showTab('jadwal');
+    }
+
+    // -------------------------
+    // ADMIN: Edit Status Ruangan → sinkron ke bookingList
+    async function ubahStatusRuangan() {
+      const tanggal = document.getElementById('editTanggal').value;
+      const jam = document.getElementById('editJam').value;
+      const ruang = document.getElementById('editRuang').value;
+      const opsi = document.getElementById('editOpsi').value;
+      const nama = document.getElementById('editNama').value.trim();
+      const nim = document.getElementById('editNim').value.trim();
+      const ket = document.getElementById('editKet').value.trim();
+
+      if (!tanggal || !jam || !ruang || !opsi) {
+        alert('Lengkapi semua data wajib.');
+        return;
+      }
+
+      // Simpan ke database (backend/room_status.php)
+      try {
+        const res = await fetch('/backend/room_status.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tanggal: tanggal,
+            waktu: jam,
+            ruang: ruang,
+            status: opsi === 'kosong' ? 'kosong' : 'terpakai',
+            by_nama: opsi === 'kosong' ? '' : nama,
+            nim: opsi === 'kosong' ? '' : nim,
+            ket: opsi === 'kosong' ? '' : ket
+          })
+        });
+
+        const result = await res.json();
+
+        if (!result.success) {
+          alert(result.error || "Gagal menyimpan status ruangan.");
+          return;
+        }
+      } catch (error) {
+        console.error("Error saat kirim ke server:", error);
+        return;
+      }
+
+      // Perbarui juga data lokal (fitur lama)
+      if (!RuanganStatus[tanggal]) RuanganStatus[tanggal] = {};
+      if (!RuanganStatus[tanggal][jam]) RuanganStatus[tanggal][jam] = {};
+
+      if (opsi === 'terpakai') {
+        RuanganStatus[tanggal][jam][ruang] = { status: 'terpakai', by: nama, nim: nim, ket: ket };
+      } else {
+        RuanganStatus[tanggal][jam][ruang] = { status: 'kosong' };
+      }
+
+      // Sinkronkan dengan bookingList (fitur lama)
+      let found = false;
+      bookingList.forEach(b => {
+        if (b.tanggal === tanggal && b.waktu === jam && b.ruang === ruang) {
+          b.status = (opsi === 'terpakai') ? 'Disetujui' : 'Ditolak';
+          found = true;
+
+          const notif = {
+            id: Date.now(),
+            bookingId: b.id,
+            status: b.status,
+            message: `Permohonan Anda untuk ruang ${ruang} pada ${tanggal} ${jam} telah ${b.status.toUpperCase()}.`,
+            createdAt: new Date().toISOString()
+          };
+          if (!usersNotifications[b.user]) usersNotifications[b.user] = [];
+          usersNotifications[b.user].push(notif);
+        }
+      });
+
+      // Simpan lokal dan render ulang tampilan
+      saveAll();
+      await loadDataFromServer();
+      renderRuangan();
+      renderAdminRequests();
+      renderScheduleList?.(); // kalau ada menu utama jadwal
+      renderInboxForCurrentUser?.();
+
+      alert(`Status ruang ${ruang} pada ${tanggal} jam ${jam} telah diubah menjadi ${opsi.toUpperCase()}${found ? ' dan data permohonan diperbarui.' : '.'}`);
+
+      document.getElementById('editStatusForm').reset();
+    }
+
+
+    // Initialize page
+    initSelectors();
+    // Default: hide main content
+    document.getElementById('mainContent').classList.add('hidden');
+
+    // render Ruangan for today by default
+    const todayInput = document.getElementById('tanggal');
+    if (todayInput) {
+      const today = new Date().toISOString().slice(0,10);
+      todayInput.value = today;
+    }
+
+    // Pastikan dropdown jam & ruang ikut terisi saat halaman admin dibuka
+    const editJam = document.getElementById('editJam');
+    const editRuang = document.getElementById('editRuang');
+    if (editJam) editJam.innerHTML = waktuList.map(w => `<option value="${w}">${w}</option>`).join('');
+    if (editRuang) editRuang.innerHTML = RuanganList.map(r => `<option value="${r}">${r}</option>`).join('');
+
+    function saveAll() {
+      try {
+        localStorage.setItem("bookingList", JSON.stringify(bookingList || []));
+        localStorage.setItem("RuanganStatus", JSON.stringify(RuanganStatus || {}));
+        localStorage.setItem("usersNotifications", JSON.stringify(usersNotifications || {}));
+      } catch (e) {
+        console.error("Gagal menyimpan data:", e);
+      }
+    }
+
+  </script>
+</body>
+</html>
